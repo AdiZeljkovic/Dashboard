@@ -1,0 +1,7 @@
+{
+  "name": "Life OS - Premium Dashboard",
+  "description": "A comprehensive, premium dark-mode dashboard for personal and professional management including CRM, Finance, Habits, and Smart Home controls.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
