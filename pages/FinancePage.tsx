@@ -1,10 +1,12 @@
 
+
+
 import React, { useState } from 'react';
 import { GlassCard } from '../components/ui/GlassCard';
 import { 
   ArrowUpRight, ArrowDownRight, DollarSign, Wallet, Building2, User, 
   PieChart as PieIcon, TrendingUp, CreditCard, ShoppingBag, Home, 
-  Zap, Car, Coffee, ShieldAlert, CalendarClock, MoreHorizontal 
+  Zap, Car, Coffee, ShieldAlert, CalendarClock, MoreHorizontal, Monitor 
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, Tooltip, ResponsiveContainer, 
@@ -13,7 +15,7 @@ import {
 import { useData } from '../context/DataContext';
 
 export const FinancePage: React.FC = () => {
-  const { transactions } = useData();
+  const { transactions, bills } = useData();
   const [activeTab, setActiveTab] = useState<'personal' | 'business'>('personal');
   const [timeRange, setTimeRange] = useState('Ovaj mjesec');
 
@@ -62,14 +64,6 @@ export const FinancePage: React.FC = () => {
     { name: '30', income: income, expense: expense },
   ];
 
-  // Mock Recurring Bills (Only for Personal)
-  const recurringBills = [
-    { name: 'Kirija', amount: 650, date: '01. Nov', icon: Home, status: 'paid' },
-    { name: 'Telemach', amount: 65, date: '10. Nov', icon: Zap, status: 'pending' },
-    { name: 'Netflix', amount: 24, date: '15. Nov', icon: CalendarClock, status: 'pending' },
-    { name: 'Gym', amount: 60, date: '20. Nov', icon: ShieldAlert, status: 'pending' },
-  ];
-
   // Helper for Category Icons
   const getCategoryIcon = (name: string) => {
     const n = name.toLowerCase();
@@ -79,6 +73,16 @@ export const FinancePage: React.FC = () => {
     if (n.includes('zabava') || n.includes('kafa')) return Coffee;
     if (n.includes('plata')) return Wallet;
     return CreditCard;
+  };
+
+  const getBillIcon = (iconName: string) => {
+      switch(iconName) {
+          case 'Home': return Home;
+          case 'Zap': return Zap;
+          case 'Monitor': return Monitor;
+          case 'ShieldAlert': return ShieldAlert;
+          default: return CalendarClock;
+      }
   };
 
   return (
@@ -350,10 +354,12 @@ export const FinancePage: React.FC = () => {
                    <CalendarClock size={18} className="text-orange-400" /> Fiksni Troškovi
                 </h3>
                 <div className="space-y-3">
-                   {recurringBills.map((bill, i) => (
+                   {bills.map((bill, i) => {
+                      const Icon = getBillIcon(bill.iconName);
+                      return (
                       <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 transition-colors group">
                          <div className={`p-2 rounded-lg ${bill.status === 'paid' ? 'bg-green-500/20 text-green-500' : 'bg-orange-500/20 text-orange-500'}`}>
-                            <bill.icon size={18} />
+                            <Icon size={18} />
                          </div>
                          <div className="flex-1">
                             <h4 className="text-sm font-bold text-zinc-200">{bill.name}</h4>
@@ -366,11 +372,9 @@ export const FinancePage: React.FC = () => {
                             </span>
                          </div>
                       </div>
-                   ))}
+                   )})}
                    
-                   <button className="w-full py-2 mt-4 border border-dashed border-white/20 rounded-lg text-zinc-500 text-xs hover:text-white hover:border-primary/50 hover:bg-primary/10 transition-all">
-                      + Dodaj fiksni trošak
-                   </button>
+                   <p className="text-center text-xs text-zinc-500 mt-4">Upravljajte troškovima u Admin panelu</p>
                 </div>
              </GlassCard>
          )}

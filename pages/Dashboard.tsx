@@ -1,17 +1,22 @@
 
+
+
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from '../components/ui/GlassCard';
-import { Search, Youtube, Github, Cloud, Server, CheckSquare, Save, CloudRain, Sun, CloudSun, CloudLightning, ChevronDown, Link as LinkIcon, Sunrise, Sunset, Moon, Snowflake, Wind } from 'lucide-react';
+import { Search, Youtube, Github, Cloud, Server, CheckSquare, Save, CloudRain, Sun, CloudSun, CloudLightning, ChevronDown, Link as LinkIcon, Sunrise, Sunset, Moon, Snowflake, Wind, Instagram, Linkedin, Twitter, Database, Monitor, Globe, Plus } from 'lucide-react';
 import { format, getHours } from 'date-fns';
 import { hr } from 'date-fns/locale';
 import { useData } from '../context/DataContext';
 
 export const Dashboard: React.FC = () => {
-  const { tasks, toggleTask, shortcuts, homelabServices, quickNote, updateQuickNote, prayerTimes } = useData();
+  const { tasks, toggleTask, shortcuts, homelabServices, addNote, prayerTimes } = useData();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
   const [searchEngine, setSearchEngine] = useState<'google' | 'bing' | 'duckduckgo'>('google');
   const [engineMenuOpen, setEngineMenuOpen] = useState(false);
+  
+  // Quick Note State
+  const [newQuickNote, setNewQuickNote] = useState('');
   
   // Weather State
   const [weather, setWeather] = useState<{
@@ -30,9 +35,10 @@ export const Dashboard: React.FC = () => {
 
   const [nextPrayerIndex, setNextPrayerIndex] = useState(0);
 
-  const displayTasks = tasks.slice(0, 5);
+  // Show ALL tasks, no slice
+  const displayTasks = tasks;
 
-  // Time & Weather Fetching (Vaktija is now global in Context)
+  // Time & Weather Fetching
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     
@@ -146,6 +152,17 @@ export const Dashboard: React.FC = () => {
     window.open(url, '_blank');
   };
 
+  const handleSaveNote = () => {
+     if(!newQuickNote.trim()) return;
+     addNote({
+         id: Date.now().toString(),
+         content: newQuickNote,
+         date: new Date().toISOString().split('T')[0]
+     });
+     setNewQuickNote('');
+     alert("Bilješka sačuvana! Vidi Admin Panel za pregled.");
+  };
+
   const greeting = () => {
     const hour = getHours(currentTime);
     if (hour < 12) return "Dobro jutro";
@@ -168,6 +185,13 @@ export const Dashboard: React.FC = () => {
       case 'Youtube': return <Youtube size={24} />;
       case 'Github': return <Github size={24} />;
       case 'Cloud': return <Cloud size={24} />;
+      case 'Instagram': return <Instagram size={24} />;
+      case 'Linkedin': return <Linkedin size={24} />;
+      case 'Twitter': return <Twitter size={24} />;
+      case 'Database': return <Database size={24} />;
+      case 'Server': return <Server size={24} />;
+      case 'Monitor': return <Monitor size={24} />;
+      case 'Globe': return <Globe size={24} />;
       default: return <LinkIcon size={24} />;
     }
   };
@@ -284,7 +308,7 @@ export const Dashboard: React.FC = () => {
                className={`aspect-square flex flex-col items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-white/5 to-transparent border border-white/10 text-zinc-300 hover:text-white hover:border-white/30 transition-all`}
              >
                {getShortcutIcon(shortcut.iconName)}
-               <span className="text-[10px]">{shortcut.name}</span>
+               <span className="text-[10px] truncate w-full text-center px-1">{shortcut.name}</span>
              </a>
            ))}
         </div>
@@ -346,7 +370,7 @@ export const Dashboard: React.FC = () => {
         </div>
       </GlassCard>
 
-      {/* Task List */}
+      {/* Task List - Shows ALL tasks */}
       <GlassCard className="md:col-span-2 lg:col-span-4 xl:col-span-4 row-span-2 p-6 flex flex-col">
          <div className="flex justify-between items-center mb-6">
            <h3 className="text-xl font-display font-bold">Moj Dan</h3>
@@ -370,20 +394,29 @@ export const Dashboard: React.FC = () => {
                 <span className={`w-2 h-2 rounded-full ${task.priority === 'high' ? 'bg-red-500' : task.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`}></span>
              </div>
            ))}
+           {displayTasks.length === 0 && <p className="text-center text-zinc-500 text-sm mt-10">Sve čisto! Nema zadataka.</p>}
          </div>
       </GlassCard>
 
-      {/* Quick Notes - Dynamic */}
+      {/* Quick Notes - Add New */}
       <GlassCard className="md:col-span-4 lg:col-span-6 xl:col-span-6 row-span-1 p-0 flex flex-col">
          <div className="flex justify-between items-center px-4 py-2 border-b border-white/5 bg-black/20">
-            <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-wider">Quick Note</h3>
-            <button className="text-primary hover:text-white transition-colors p-1"><Save size={16} /></button>
+            <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-wider flex items-center gap-2"><Plus size={12}/> Dodaj Bilješku</h3>
+            <button 
+              onClick={handleSaveNote}
+              className="text-primary hover:text-white transition-colors p-1"
+            >
+              <Save size={16} />
+            </button>
          </div>
          <textarea 
             className="flex-1 w-full bg-transparent resize-none outline-none text-zinc-300 placeholder:text-zinc-700 font-light p-4 text-sm leading-relaxed"
-            placeholder="Piši ovdje..."
-            value={quickNote}
-            onChange={(e) => updateQuickNote(e.target.value)}
+            placeholder="Napiši novu bilješku i klikni Save..."
+            value={newQuickNote}
+            onChange={(e) => setNewQuickNote(e.target.value)}
+            onKeyDown={(e) => {
+                if(e.key === 'Enter' && e.ctrlKey) handleSaveNote();
+            }}
          ></textarea>
       </GlassCard>
 

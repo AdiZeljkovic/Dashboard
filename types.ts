@@ -105,14 +105,20 @@ export interface Habit {
   id: string;
   name: string;
   streak: number;
-  history: boolean[]; // last 7 days
+  completedDates: string[]; // ISO date strings (YYYY-MM-DD)
+}
+
+export interface MoodEntry {
+  id: string;
+  date: string; // YYYY-MM-DD
+  score: 1 | 2 | 3 | 4 | 5; // 1 = Angry, 5 = Happy
 }
 
 export interface Shortcut {
   id: string;
   name: string;
   url: string;
-  iconName: string; // 'Youtube', 'Github', 'Cloud', etc.
+  iconName: string; 
   color: string;
 }
 
@@ -170,6 +176,21 @@ export interface SupabaseConfig {
   connected: boolean;
 }
 
+export interface Note {
+  id: string;
+  content: string;
+  date: string;
+}
+
+export interface Bill {
+  id: string;
+  name: string;
+  amount: number;
+  date: string; // "DD. MMM" string or similar
+  status: 'paid' | 'pending';
+  iconName: string; // for UI mapping
+}
+
 export interface AppData {
   tasks: Task[];
   clients: Client[];
@@ -182,12 +203,14 @@ export interface AppData {
   transactions: Transaction[];
   events: CalendarEvent[];
   habits: Habit[];
+  moodEntries: MoodEntry[];
   shortcuts: Shortcut[];
   homelabServices: HomelabService[];
   news: NewsItem[];
   videos: VideoItem[];
   newsSources: NewsSource[];
-  quickNote: string;
+  notes: Note[];
+  bills: Bill[];
   boards: {
     todo: Task[];
     inProgress: Task[];
@@ -255,8 +278,17 @@ export interface DataContextType extends AppData {
 
   addHabit: (habit: Habit) => void;
   deleteHabit: (id: string) => void;
+  toggleHabitForDate: (id: string, date: string) => void;
 
-  updateQuickNote: (text: string) => void;
+  addMoodEntry: (entry: MoodEntry) => void;
+
+  addNote: (note: Note) => void;
+  updateNote: (note: Note) => void;
+  deleteNote: (id: string) => void;
+
+  addBill: (bill: Bill) => void;
+  deleteBill: (id: string) => void;
+  updateBill: (bill: Bill) => void;
 
   // Notification Methods
   markAsRead: (id: string) => void;

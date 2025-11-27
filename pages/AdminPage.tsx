@@ -1,9 +1,11 @@
 
+
+
 import React, { useState } from 'react';
 import { GlassCard } from '../components/ui/GlassCard';
 import { useData } from '../context/DataContext';
-import { Plus, Trash2, Users, DollarSign, CheckSquare, Settings, LayoutGrid, Newspaper, Activity, RefreshCw, Cloud, Database, Lock, Save, Download } from 'lucide-react';
-import { Client, Task, Transaction, Shortcut, HomelabService, NewsItem, VideoItem, Habit, NewsSource } from '../types';
+import { Plus, Trash2, Users, DollarSign, CheckSquare, Settings, LayoutGrid, Newspaper, Activity, RefreshCw, Cloud, Database, Lock, Save, Download, FileText, CalendarClock } from 'lucide-react';
+import { Client, Transaction, Shortcut, HomelabService, NewsItem, VideoItem, Habit, NewsSource, Note, Bill } from '../types';
 
 export const AdminPage: React.FC = () => {
   const { 
@@ -12,13 +14,14 @@ export const AdminPage: React.FC = () => {
     transactions, addTransaction, deleteTransaction,
     shortcuts, addShortcut, deleteShortcut,
     homelabServices, addHomelabService, deleteHomelabService,
-    quickNote, updateQuickNote,
+    notes, addNote, deleteNote, updateNote,
+    bills, addBill, deleteBill,
     addNewsSource, deleteNewsSource, newsSources, refreshNews,
     addHabit, deleteHabit, habits,
     supabaseConfig, updateSupabaseConfig, syncFromCloud
   } = useData();
 
-  const [activeTab, setActiveTab] = useState<'tasks' | 'clients' | 'finance' | 'dashboard' | 'content' | 'habits' | 'cloud'>('tasks');
+  const [activeTab, setActiveTab] = useState<'tasks' | 'clients' | 'finance' | 'dashboard' | 'content' | 'habits' | 'cloud' | 'notes'>('tasks');
   const [isSyncing, setIsSyncing] = useState(false);
   const [isCloudLoading, setIsCloudLoading] = useState(false);
 
@@ -30,6 +33,7 @@ export const AdminPage: React.FC = () => {
   const [newHomelab, setNewHomelab] = useState<Partial<HomelabService>>({ name: '', ip: '', url: 'http://', status: 'online' });
   const [newSource, setNewSource] = useState<Partial<NewsSource>>({ name: '', type: 'rss', url: '', category: 'tech' });
   const [newHabit, setNewHabit] = useState('');
+  const [newBill, setNewBill] = useState<Partial<Bill>>({ name: '', amount: 0, date: '', iconName: 'Zap', status: 'pending' });
   
   // Cloud Config State
   const [cloudUrl, setCloudUrl] = useState(supabaseConfig.url || '');
@@ -118,9 +122,23 @@ export const AdminPage: React.FC = () => {
           id: Date.now().toString(),
           name: newHabit,
           streak: 0,
-          history: [false, false, false, false, false, false, false]
+          completedDates: []
       });
       setNewHabit('');
+  };
+
+  const handleAddBill = (e: React.FormEvent) => {
+      e.preventDefault();
+      if(!newBill.name) return;
+      addBill({
+          id: Date.now().toString(),
+          name: newBill.name!,
+          amount: Number(newBill.amount),
+          date: newBill.date || '1. u mj.',
+          iconName: newBill.iconName || 'Zap',
+          status: newBill.status as any
+      });
+      setNewBill({ name: '', amount: 0, date: '', iconName: 'Zap', status: 'pending' });
   };
 
   const handleSyncNews = async () => {
@@ -161,6 +179,7 @@ export const AdminPage: React.FC = () => {
       <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
         {[
             { id: 'tasks', label: 'Zadaci', icon: CheckSquare },
+            { id: 'notes', label: 'Bilješke', icon: FileText },
             { id: 'clients', label: 'Klijenti', icon: Users },
             { id: 'finance', label: 'Finansije', icon: DollarSign },
             { id: 'dashboard', label: 'Dashboard', icon: LayoutGrid },
@@ -199,6 +218,33 @@ export const AdminPage: React.FC = () => {
               ))}
             </div>
           </GlassCard>
+        </div>
+      )}
+
+      {/* --- NOTES --- */}
+      {activeTab === 'notes' && (
+        <div className="grid grid-cols-1 gap-8">
+            <GlassCard className="p-6">
+                <h3 className="text-xl font-bold mb-4">Sve Brze Bilješke</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {notes.map(note => (
+                        <div key={note.id} className="p-4 bg-white/5 rounded-xl border border-white/5 flex flex-col justify-between group h-full">
+                            <div>
+                                <div className="text-xs text-zinc-500 mb-2">{note.date}</div>
+                                <textarea 
+                                    className="w-full bg-transparent resize-none outline-none text-zinc-200 text-sm h-24"
+                                    value={note.content}
+                                    onChange={(e) => updateNote({...note, content: e.target.value})}
+                                ></textarea>
+                            </div>
+                            <div className="flex justify-end pt-2 border-t border-white/5 mt-2">
+                                <button onClick={() => deleteNote(note.id)} className="text-zinc-500 hover:text-red-400"><Trash2 size={16}/></button>
+                            </div>
+                        </div>
+                    ))}
+                    {notes.length === 0 && <p className="text-zinc-500 col-span-3 text-center py-10">Nema bilješki. Dodajte ih sa naslovnice.</p>}
+                </div>
+            </GlassCard>
         </div>
       )}
 
@@ -257,16 +303,43 @@ export const AdminPage: React.FC = () => {
               <input type="text" placeholder="Kategorija (npr. Hrana)" value={newTrans.category} onChange={e => setNewTrans({...newTrans, category: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white outline-none"/>
               <button type="submit" className="w-full bg-green-600 py-3 rounded-lg text-white font-bold hover:bg-green-500">Knjiži</button>
             </form>
+
+            <div className="mt-8 pt-8 border-t border-white/10">
+                <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><CalendarClock size={20}/> Fiksni Troškovi</h3>
+                <form onSubmit={handleAddBill} className="space-y-3">
+                    <input type="text" placeholder="Naziv (npr. Kirija)" value={newBill.name} onChange={e => setNewBill({...newBill, name: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white outline-none"/>
+                    <input type="text" placeholder="Datum (npr. 15. Nov)" value={newBill.date} onChange={e => setNewBill({...newBill, date: e.target.value})} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white outline-none"/>
+                    <input type="number" placeholder="Iznos" value={newBill.amount} onChange={e => setNewBill({...newBill, amount: Number(e.target.value)})} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white outline-none"/>
+                    <button type="submit" className="w-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/50 py-2 rounded-lg font-bold">Dodaj Trošak</button>
+                </form>
+            </div>
           </GlassCard>
+          
           <GlassCard className="p-6 lg:col-span-2">
             <h3 className="text-xl font-bold mb-4">Dnevnik Transakcija</h3>
-            <div className="max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="max-h-[300px] overflow-y-auto pr-2 custom-scrollbar mb-8">
                {transactions.map(t => (
                  <div key={t.id} className="flex justify-between items-center p-3 border-b border-white/5 hover:bg-white/5 transition-colors">
                     <div><p className="font-medium">{t.description}</p><p className="text-xs text-zinc-500">{t.date} • {t.category}</p></div>
                     <div className="flex items-center gap-4"><span className={`font-mono font-bold ${t.type === 'Income' ? 'text-green-400' : 'text-red-400'}`}>{t.type === 'Income' ? '+' : '-'}{t.amount} KM</span><button onClick={() => deleteTransaction(t.id)} className="text-zinc-600 hover:text-red-400"><Trash2 size={16}/></button></div>
                  </div>
                ))}
+            </div>
+
+            <h3 className="text-xl font-bold mb-4">Pregled Fiksnih Troškova (Bills)</h3>
+            <div className="space-y-2">
+                {bills.map(b => (
+                    <div key={b.id} className="flex justify-between items-center p-3 border border-white/5 rounded-lg">
+                        <div className="flex items-center gap-3">
+                            <span className="font-bold">{b.name}</span>
+                            <span className="text-xs text-zinc-500">{b.date}</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <span className="font-mono">{b.amount} KM</span>
+                            <button onClick={() => deleteBill(b.id)} className="text-red-400 p-2"><Trash2 size={14}/></button>
+                        </div>
+                    </div>
+                ))}
             </div>
           </GlassCard>
         </div>
@@ -285,7 +358,14 @@ export const AdminPage: React.FC = () => {
                             <option value="Link">Default Link</option>
                             <option value="Youtube">YouTube</option>
                             <option value="Github">GitHub</option>
-                            <option value="Cloud">Cloud</option>
+                            <option value="Cloud">Cloud / iCloud</option>
+                            <option value="Instagram">Instagram</option>
+                            <option value="Linkedin">LinkedIn</option>
+                            <option value="Twitter">X / Twitter</option>
+                            <option value="Database">Database</option>
+                            <option value="Server">Server</option>
+                            <option value="Monitor">Monitor / System</option>
+                            <option value="Globe">Web</option>
                         </select>
                         <button type="submit" className="w-full bg-primary py-2 rounded-lg text-white">Dodaj Prečicu</button>
                     </form>
@@ -299,14 +379,6 @@ export const AdminPage: React.FC = () => {
                     </div>
                 </GlassCard>
 
-                <GlassCard className="p-6">
-                    <h3 className="text-xl font-bold mb-4">Quick Note Preview</h3>
-                    <textarea 
-                        className="w-full h-32 bg-black/20 border border-white/10 rounded-lg p-3 text-white" 
-                        value={quickNote} 
-                        onChange={(e) => updateQuickNote(e.target.value)}
-                    />
-                </GlassCard>
             </div>
 
             <GlassCard className="p-6">

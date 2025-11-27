@@ -1,13 +1,11 @@
 
+
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { 
   DataContextType, Task, Client, Transaction, Habit, Shortcut, HomelabService, 
   NewsItem, VideoItem, CalendarEvent, Invoice, Deal, Communication, Project, 
-  VaultItem, Ticket, NewsSource, Notification, SupabaseConfig
+  VaultItem, Ticket, NewsSource, Notification, SupabaseConfig, Note, Bill, MoodEntry
 } from '../types';
-import { formatDistanceToNow, differenceInMinutes, isSameDay } from 'date-fns';
-import parse from 'date-fns/parse';
-import { hr } from 'date-fns/locale';
 import { createClient } from '@supabase/supabase-js';
 
 // --- SECURITY & CONSTANTS ---
@@ -113,8 +111,18 @@ const initialNewsSources: NewsSource[] = [
 ];
 
 const initialHabits: Habit[] = [
-  { id: '1', name: 'Čitanje 30min', streak: 12, history: [true, true, false, true, true, true, false] },
-  { id: '2', name: 'Trening', streak: 4, history: [false, true, true, true, true, false, false] },
+  { id: '1', name: 'Čitanje 30min', streak: 12, completedDates: [] },
+  { id: '2', name: 'Trening', streak: 4, completedDates: [] },
+];
+
+const initialNotes: Note[] = [
+  { id: '1', content: 'Podsjetnik: Kupiti novi SSD za server.', date: '2023-10-25' }
+];
+
+const initialBills: Bill[] = [
+    { id: '1', name: 'Kirija', amount: 650, date: '01. Nov', iconName: 'Home', status: 'paid' },
+    { id: '2', name: 'Telemach', amount: 65, date: '10. Nov', iconName: 'Zap', status: 'pending' },
+    { id: '3', name: 'Netflix', amount: 24, date: '15. Nov', iconName: 'Monitor', status: 'pending' },
 ];
 
 const defaultPrayerTimes = [
@@ -133,14 +141,12 @@ const getInitialSupabaseConfig = (): SupabaseConfig => {
   if (saved) {
     try {
       const config = JSON.parse(saved);
-      // Ensure the key exists and isn't empty before returning
       if (config.url && config.key) return config;
     } catch (e) {
       console.error("Failed to parse supabaseConfig", e);
     }
   }
   
-  // Use Hardcoded defaults or Fallback to Env Vars
   const hardcodedUrl = 'https://supabase.adizeljkovic.com/';
   const hardcodedKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE';
 
@@ -241,8 +247,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : initialHabits;
   });
 
-  const [quickNote, setQuickNote] = useState(() => {
-    return localStorage.getItem('quickNote') || '';
+  const [notes, setNotes] = useState<Note[]>(() => {
+    const saved = localStorage.getItem('notes');
+    return saved ? JSON.parse(saved) : initialNotes;
+  });
+
+  const [bills, setBills] = useState<Bill[]>(() => {
+    const saved = localStorage.getItem('bills');
+    return saved ? JSON.parse(saved) : initialBills;
+  });
+
+  const [moodEntries, setMoodEntries] = useState<MoodEntry[]>(() => {
+    const saved = localStorage.getItem('moodEntries');
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [notifications, setNotifications] = useState<Notification[]>(() => {
@@ -267,7 +284,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (supabaseConfig.url && supabaseConfig.key) {
           try {
              supabaseRef.current = createClient(supabaseConfig.url, supabaseConfig.key);
-             console.log("Supabase Client Initialized");
           } catch (e) {
              console.error("Supabase init error", e);
              supabaseRef.current = null;
@@ -293,7 +309,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
               .from('life_os_data')
               .upsert({ key, value: data }, { onConflict: 'key' });
           if (error) console.error("Cloud Sync Error for " + key, error);
-          else console.log("Cloud Sync Success: " + key);
       } catch (e) {
           console.error("Cloud Sync Exception", e);
       }
@@ -324,7 +339,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
                       case 'homelab': setHomelabServices(val); break;
                       case 'newsSources': setNewsSources(val); break;
                       case 'habits': setHabits(val); break;
-                      case 'quickNote': setQuickNote(val); break;
+                      case 'notes': setNotes(val); break;
+                      case 'bills': setBills(val); break;
+                      case 'moodEntries': setMoodEntries(val); break;
                       case 'notifications': setNotifications(val); break;
                   }
                   localStorage.setItem(row.key, typeof val === 'string' ? val : JSON.stringify(val));
@@ -355,7 +372,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => persist('videos', videos), [videos]);
   useEffect(() => persist('newsSources', newsSources), [newsSources]);
   useEffect(() => persist('habits', habits), [habits]);
-  useEffect(() => persist('quickNote', quickNote), [quickNote]);
+  useEffect(() => persist('notes', notes), [notes]);
+  useEffect(() => persist('bills', bills), [bills]);
+  useEffect(() => persist('moodEntries', moodEntries), [moodEntries]);
   useEffect(() => persist('notifications', notifications), [notifications]);
   
   useEffect(() => localStorage.setItem('supabaseConfig', JSON.stringify(supabaseConfig)), [supabaseConfig]);
@@ -383,16 +402,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       fetchVaktija();
   }, []);
-
-  // Notification Logic (Keeping simplified for brevity, same as original)
-  useEffect(() => {
-      const checkNotifications = () => {
-          // Placeholder Logic
-      };
-      const interval = setInterval(checkNotifications, 60000);
-      return () => clearInterval(interval);
-  }, [prayerTimes, events, habits, invoices]);
-
 
   // --- ACTIONS ---
   const addTask = (task: Task) => setTasks([...tasks, task]);
@@ -462,8 +471,30 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addHabit = (h: Habit) => setHabits([...habits, h]);
   const deleteHabit = (id: string) => setHabits(habits.filter(h => h.id !== id));
+  
+  const toggleHabitForDate = (id: string, date: string) => {
+    setHabits(habits.map(h => {
+        if(h.id !== id) return h;
+        const exists = h.completedDates?.includes(date);
+        let newDates = h.completedDates || [];
+        if(exists) {
+            newDates = newDates.filter(d => d !== date);
+        } else {
+            newDates = [...newDates, date];
+        }
+        return { ...h, completedDates: newDates, streak: newDates.length }; // Simplified streak for now
+    }));
+  };
 
-  const updateQuickNote = (text: string) => setQuickNote(text);
+  const addMoodEntry = (entry: MoodEntry) => setMoodEntries([...moodEntries, entry]);
+
+  const addNote = (n: Note) => setNotes([n, ...notes]);
+  const updateNote = (n: Note) => setNotes(notes.map(note => note.id === n.id ? n : note));
+  const deleteNote = (id: string) => setNotes(notes.filter(n => n.id !== id));
+
+  const addBill = (b: Bill) => setBills([...bills, b]);
+  const updateBill = (b: Bill) => setBills(bills.map(bill => bill.id === b.id ? b : bill));
+  const deleteBill = (id: string) => setBills(bills.filter(b => b.id !== id));
 
   const addNewsSource = (s: NewsSource) => setNewsSources([...newsSources, s]);
   const deleteNewsSource = (id: string) => setNewsSources(newsSources.filter(s => s.id !== id));
@@ -498,7 +529,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <DataContext.Provider value={{
       tasks, clients, invoices, deals, communications, projects, vaultItems, tickets, 
-      transactions, events, habits, boards, shortcuts, homelabServices, news, videos, newsSources, quickNote, notifications, prayerTimes, supabaseConfig,
+      transactions, events, habits, boards, shortcuts, homelabServices, news, videos, newsSources, notes, bills, moodEntries, notifications, prayerTimes, supabaseConfig,
       isLoggedIn,
       addTask, toggleTask, deleteTask,
       addClient, updateClient, deleteClient,
@@ -515,8 +546,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       addHomelabService, deleteHomelabService,
       addNews, deleteNews,
       addVideo, deleteVideo,
-      addHabit, deleteHabit,
-      updateQuickNote,
+      addHabit, deleteHabit, toggleHabitForDate,
+      addMoodEntry,
+      addNote, updateNote, deleteNote,
+      addBill, updateBill, deleteBill,
       addNewsSource, deleteNewsSource, refreshNews,
       markAsRead, markAllAsRead, clearNotifications, removeNotification,
       updateSupabaseConfig, syncFromCloud, syncToCloud,
