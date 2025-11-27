@@ -142,7 +142,7 @@ const getInitialSupabaseConfig = (): SupabaseConfig => {
   
   // Use Hardcoded defaults or Fallback to Env Vars
   const hardcodedUrl = 'https://supabase.adizeljkovic.com/';
-  const hardcodedKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzYzMTYxMjAwLCJleHAiOjE5MjA5Mjc2MDB9.OZ-ga5VbNM4byxipgq_6eoJvzCV7j3amjNVEGGVY1MY';
+  const hardcodedKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE';
 
   const envUrl = (import.meta as any).env?.VITE_SUPABASE_URL || hardcodedUrl;
   const envKey = (import.meta as any).env?.VITE_SUPABASE_KEY || hardcodedKey;
