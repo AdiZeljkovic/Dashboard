@@ -179,7 +179,7 @@ export const NewsPage: React.FC = () => {
          <div className="text-center py-20 bg-white/5 rounded-2xl border border-white/5">
              <Globe size={48} className="mx-auto text-zinc-600 mb-4" />
              <h3 className="text-xl font-bold text-zinc-300">Nema vijesti za ovu kategoriju</h3>
-             <p className="text-zinc-500 mt-2">Idite na Admin panel -> Sadržaj i dodajte RSS izvore.</p>
+             <p className="text-zinc-500 mt-2">Idite na Admin panel &rarr; Sadržaj i dodajte RSS izvore.</p>
          </div>
        )}
 

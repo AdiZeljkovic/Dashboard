@@ -345,7 +345,7 @@ export const AdminPage: React.FC = () => {
                   <h3 className="text-xl font-bold mb-4">Izvori Sadržaja (RSS & YouTube)</h3>
                   <div className="mb-4 text-xs text-zinc-400 bg-white/5 p-3 rounded">
                       Unesite RSS link za portal (npr. klix.ba/rss) ili YouTube Channel ID.
-                      <br/>Za YouTube ID: idite na kanal -> About -> Share -> Copy Channel ID.
+                      <br/>Za YouTube ID: idite na kanal &rarr; About &rarr; Share &rarr; Copy Channel ID.
                   </div>
                   <form onSubmit={handleAddSource} className="space-y-3 mb-6">
                       <select value={newSource.category} onChange={e => setNewSource({...newSource, category: e.target.value as any})} className="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white">
