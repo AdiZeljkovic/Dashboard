@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { GlassCard } from '../components/ui/GlassCard';
 import { ChevronLeft, ChevronRight, Plus, Clock, Trash2, X, Calendar as CalendarIcon, CheckSquare, Bell } from 'lucide-react';
 import { format, endOfMonth, eachDayOfInterval, isSameMonth, isToday, getDay, addMonths, isSameDay, isAfter } from 'date-fns';
+import startOfMonth from 'date-fns/startOfMonth';
+import subMonths from 'date-fns/subMonths';
+import parseISO from 'date-fns/parseISO';
 import { hr } from 'date-fns/locale';
 import { useData } from '../context/DataContext';
 import { CalendarEvent } from '../types';
@@ -17,16 +20,7 @@ export const CalendarPage: React.FC = () => {
     type: 'event'
   });
 
-  const getStartOfMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1);
-  };
-  
-  const parseDate = (dateStr: string) => {
-      // Ensure local time parsing to avoid timezone shifts
-      return new Date(`${dateStr}T00:00`);
-  };
-
-  const monthStart = getStartOfMonth(currentDate);
+  const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
@@ -34,7 +28,7 @@ export const CalendarPage: React.FC = () => {
   const startDay = getDay(monthStart); // 0 = Sunday
   const emptyDays = Array(startDay === 0 ? 6 : startDay - 1).fill(null); 
 
-  const handlePrevMonth = () => setCurrentDate(addMonths(currentDate, -1));
+  const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1));
   const handleNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
 
   const handleSaveEvent = (e: React.FormEvent) => {
@@ -54,10 +48,10 @@ export const CalendarPage: React.FC = () => {
   };
 
   // Filter events for sidebar
-  const todayEvents = events.filter(e => isSameDay(parseDate(e.date), new Date())).sort((a, b) => a.time.localeCompare(b.time));
+  const todayEvents = events.filter(e => isSameDay(parseISO(e.date), new Date())).sort((a, b) => a.time.localeCompare(b.time));
   const upcomingEvents = events
-    .filter(e => isAfter(parseDate(e.date), new Date()) && !isSameDay(parseDate(e.date), new Date()))
-    .sort((a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime())
+    .filter(e => isAfter(parseISO(e.date), new Date()) && !isSameDay(parseISO(e.date), new Date()))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 5); // Show only next 5 events
 
   return (
@@ -98,7 +92,7 @@ export const CalendarPage: React.FC = () => {
              <div key={`empty-${i}`} className="bg-transparent" />
           ))}
           {days.map((day) => {
-            const dayEvents = events.filter(e => isSameDay(parseDate(e.date), day));
+            const dayEvents = events.filter(e => isSameDay(parseISO(e.date), day));
             return (
             <GlassCard 
               key={day.toString()} 
@@ -185,8 +179,8 @@ export const CalendarPage: React.FC = () => {
                     upcomingEvents.map(e => (
                         <div key={e.id} className="flex gap-3 items-center group p-2 rounded-lg hover:bg-white/5 transition-colors">
                             <div className="flex flex-col items-center min-w-[3rem] bg-white/5 rounded p-1 border border-white/5">
-                                <span className="text-[10px] text-zinc-400 uppercase">{format(parseDate(e.date), 'MMM')}</span>
-                                <span className="text-lg font-bold text-white leading-none">{format(parseDate(e.date), 'dd')}</span>
+                                <span className="text-[10px] text-zinc-400 uppercase">{format(parseISO(e.date), 'MMM')}</span>
+                                <span className="text-lg font-bold text-white leading-none">{format(parseISO(e.date), 'dd')}</span>
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-zinc-300 text-sm font-medium truncate">{e.title}</p>

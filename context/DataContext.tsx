@@ -7,6 +7,8 @@ import {
   VaultItem, Ticket, NewsSource, Notification, SupabaseConfig
 } from '../types';
 import { formatDistanceToNow, differenceInMinutes, isSameDay } from 'date-fns';
+import parse from 'date-fns/parse';
+import parseISO from 'date-fns/parseISO';
 import { hr } from 'date-fns/locale';
 import { createClient } from '@supabase/supabase-js';
 
@@ -427,11 +429,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           // B. Check Calendar Events (60 min warning)
           events.forEach(e => {
-              // const eventDateTime = parse(`${e.date} ${e.time}`, 'yyyy-MM-dd HH:mm', new Date()); // Removed due to import error
-              const [y, mon, d] = e.date.split('-').map(Number);
-              const [h, min] = e.time.split(':').map(Number);
-              const eventDateTime = new Date(y, mon - 1, d, h, min);
-
+              const eventDateTime = parse(`${e.date} ${e.time}`, 'yyyy-MM-dd HH:mm', new Date());
               const diff = differenceInMinutes(eventDateTime, now);
               
               if (diff > 0 && diff <= 60 && isSameDay(eventDateTime, now)) {
