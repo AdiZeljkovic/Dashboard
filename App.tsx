@@ -12,15 +12,24 @@ import { NewsPage } from './pages/NewsPage';
 import { AdminPage } from './pages/AdminPage';
 import { DataProvider, useData } from './context/DataContext';
 import { LoginPage } from './components/LoginPage';
+import { SetupPage } from './components/SetupPage';
 
-// Wrapper component to handle auth check inside DataProvider context
-const AppContent: React.FC = () => {
-  const { isLoggedIn } = useData();
+// Wrapper component to handle routing logic based on state
+const AppRoutes: React.FC = () => {
+  const { isLoggedIn, supabaseConfig } = useData();
 
+  // Condition A: Supabase not configured -> Show Setup
+  // Check specifically for URL and Key existence
+  if (!supabaseConfig.url || !supabaseConfig.key) {
+    return <SetupPage />;
+  }
+
+  // Condition B: Configured but not logged in -> Show Login
   if (!isLoggedIn) {
     return <LoginPage />;
   }
 
+  // Condition C: Logged in -> Show Dashboard
   return (
     <HashRouter>
       <Routes>
@@ -44,7 +53,7 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <DataProvider>
-       <AppContent />
+       <AppRoutes />
     </DataProvider>
   );
 };
