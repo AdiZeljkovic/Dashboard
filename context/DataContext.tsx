@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { 
   DataContextType, Task, Client, Transaction, Habit, Shortcut, HomelabService, 
@@ -131,15 +132,20 @@ const getInitialSupabaseConfig = (): SupabaseConfig => {
   const saved = localStorage.getItem('supabaseConfig');
   if (saved) {
     try {
-      return JSON.parse(saved);
+      const config = JSON.parse(saved);
+      // Ensure the key exists and isn't empty before returning
+      if (config.url && config.key) return config;
     } catch (e) {
       console.error("Failed to parse supabaseConfig", e);
     }
   }
   
-  // Fallback to Env Vars if available (Vite standard)
-  const envUrl = (import.meta as any).env?.VITE_SUPABASE_URL || '';
-  const envKey = (import.meta as any).env?.VITE_SUPABASE_KEY || '';
+  // Use Hardcoded defaults or Fallback to Env Vars
+  const hardcodedUrl = 'https://supabase.adizeljkovic.com/';
+  const hardcodedKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzYzMTYxMjAwLCJleHAiOjE5MjA5Mjc2MDB9.OZ-ga5VbNM4byxipgq_6eoJvzCV7j3amjNVEGGVY1MY';
+
+  const envUrl = (import.meta as any).env?.VITE_SUPABASE_URL || hardcodedUrl;
+  const envKey = (import.meta as any).env?.VITE_SUPABASE_KEY || hardcodedKey;
   
   return { 
     url: envUrl, 
